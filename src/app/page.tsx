@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth, signIn } from "@/lib/auth";
 import { db } from "@/db";
 import { workoutSessions } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -14,7 +14,19 @@ export default async function Home() {
         <p className="text-gray-400 mb-8">
           Track your workouts. View your progress.
         </p>
-        <p className="text-gray-500">Sign in to get started.</p>
+        <form
+          action={async () => {
+            "use server";
+            await signIn("google");
+          }}
+        >
+          <button
+            type="submit"
+            className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg text-lg font-medium transition"
+          >
+            Sign in with Google
+          </button>
+        </form>
       </div>
     );
   }
