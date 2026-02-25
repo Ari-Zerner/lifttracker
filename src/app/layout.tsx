@@ -1,10 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
   title: "LiftTracker",
   description: "Track your workouts",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
@@ -16,7 +22,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-gray-950 text-gray-100 min-h-screen">
         <AuthProvider>
-          <nav className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+          <nav className="border-b border-gray-800 px-4 sm:px-6 py-4 flex items-center justify-between">
             <a href="/" className="text-xl font-bold tracking-tight">
               LiftTracker
             </a>
@@ -36,7 +42,7 @@ export default function RootLayout({
               <AuthButton />
             </div>
           </nav>
-          <main className="max-w-2xl mx-auto px-4 py-8">{children}</main>
+          <main className="max-w-2xl mx-auto px-4 py-6 sm:py-8 pb-20">{children}</main>
         </AuthProvider>
       </body>
     </html>

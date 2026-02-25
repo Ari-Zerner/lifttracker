@@ -23,7 +23,7 @@ export function AuthButton() {
   return (
     <button
       onClick={() => signIn("google")}
-      className="text-sm bg-white text-black px-3 py-1 rounded font-medium hover:bg-gray-200 transition"
+      className="text-sm bg-white text-black px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition"
     >
       Sign in
     </button>

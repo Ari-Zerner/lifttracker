@@ -77,7 +77,7 @@ export default function StatsPage() {
         <h1 className="text-2xl font-bold">Stats</h1>
         <a
           href="/api/export"
-          className="text-sm bg-gray-800 hover:bg-gray-700 border border-gray-700 px-4 py-2 rounded-lg transition"
+          className="text-sm bg-gray-800 hover:bg-gray-700 border border-gray-700 px-4 py-2.5 min-h-[44px] flex items-center rounded-lg transition"
         >
           Export CSV
         </a>
@@ -88,7 +88,7 @@ export default function StatsPage() {
         <select
           value={exerciseFilter}
           onChange={(e) => setExerciseFilter(e.target.value)}
-          className="bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+          className="w-full sm:w-auto bg-gray-900 border border-gray-800 rounded-lg px-3 py-2.5 min-h-[44px] text-base focus:outline-none focus:border-blue-500"
         >
           <option value="all">All Exercises</option>
           {defaultWorkout.exercises.map((ex) => (
@@ -141,7 +141,7 @@ export default function StatsPage() {
                     {sets.map((s, i) => (
                       <div
                         key={i}
-                        className="flex items-center gap-3 text-sm text-gray-400"
+                        className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-gray-400"
                       >
                         <span
                           className={
@@ -182,7 +182,7 @@ export default function StatsPage() {
             <li key={w.id}>
               <button
                 onClick={() => viewWorkout(w.id)}
-                className="w-full text-left bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 flex items-center justify-between hover:border-gray-700 transition"
+                className="w-full text-left bg-gray-900 border border-gray-800 rounded-lg px-4 py-4 flex items-center justify-between hover:border-gray-700 transition"
               >
                 <span>
                   {formatDate(w.completedAt ?? w.startedAt)}

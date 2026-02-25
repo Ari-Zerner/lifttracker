@@ -40,13 +40,13 @@ export default async function Home() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <h1 className="text-2xl font-bold">
           Hey, {session.user.name?.split(" ")[0] ?? "there"}
         </h1>
         <Link
           href="/workout"
-          className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-lg font-medium transition"
+          className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 min-h-[48px] rounded-lg font-medium text-center text-lg transition w-full sm:w-auto"
         >
           Start Workout
         </Link>

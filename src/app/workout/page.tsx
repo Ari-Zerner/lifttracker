@@ -104,11 +104,11 @@ export default function WorkoutPage() {
           >
             <h2 className="text-lg font-semibold mb-3">{ex.name}</h2>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               {exerciseSets.map((s) => (
-                <div key={s._index}>
-                  <div className="flex items-center gap-3">
-                    {/* Checkbox */}
+                <div key={s._index} className="bg-gray-800/50 rounded-lg p-3">
+                  {/* Row 1: checkbox, label, inputs */}
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <button
                       onClick={() =>
                         updateSet(s._index, {
@@ -116,48 +116,50 @@ export default function WorkoutPage() {
                           incomplete: !s.completed ? false : s.incomplete,
                         })
                       }
-                      className={`w-7 h-7 rounded border-2 flex items-center justify-center shrink-0 transition ${
+                      className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center shrink-0 transition ${
                         s.completed
                           ? "bg-green-600 border-green-600 text-white"
                           : "border-gray-600 text-transparent hover:border-gray-400"
                       }`}
                     >
                       {s.completed && (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                     </button>
 
-                    {/* Set label */}
-                    <span className="text-sm text-gray-400 w-14 shrink-0">
+                    <span className="text-sm text-gray-400 w-12 shrink-0">
                       Set {s.setNumber}
                     </span>
 
-                    {/* Weight */}
-                    <input
-                      type="number"
-                      placeholder="lbs"
-                      value={s.weight}
-                      onChange={(e) =>
-                        updateSet(s._index, { weight: e.target.value })
-                      }
-                      className="w-20 bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm text-center focus:outline-none focus:border-blue-500"
-                    />
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        placeholder="lbs"
+                        value={s.weight}
+                        onChange={(e) =>
+                          updateSet(s._index, { weight: e.target.value })
+                        }
+                        className="w-20 sm:w-24 h-11 bg-gray-800 border border-gray-700 rounded-lg px-2 text-base text-center focus:outline-none focus:border-blue-500"
+                      />
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        placeholder={String(s.targetReps)}
+                        value={s.actualReps}
+                        onChange={(e) =>
+                          updateSet(s._index, { actualReps: e.target.value })
+                        }
+                        className="w-16 sm:w-20 h-11 bg-gray-800 border border-gray-700 rounded-lg px-2 text-base text-center focus:outline-none focus:border-blue-500"
+                      />
+                      <span className="text-xs text-gray-500 shrink-0">reps</span>
+                    </div>
+                  </div>
 
-                    {/* Reps */}
-                    <input
-                      type="number"
-                      placeholder={String(s.targetReps)}
-                      value={s.actualReps}
-                      onChange={(e) =>
-                        updateSet(s._index, { actualReps: e.target.value })
-                      }
-                      className="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm text-center focus:outline-none focus:border-blue-500"
-                    />
-                    <span className="text-xs text-gray-500">reps</span>
-
-                    {/* Incomplete toggle */}
+                  {/* Row 2: action buttons */}
+                  <div className="flex items-center gap-2 mt-2 ml-12 sm:ml-[3.25rem]">
                     <button
                       onClick={() =>
                         updateSet(s._index, {
@@ -166,28 +168,27 @@ export default function WorkoutPage() {
                         })
                       }
                       title="Mark as incomplete"
-                      className={`text-sm px-2 py-1 rounded transition ${
+                      className={`min-h-[44px] min-w-[44px] text-sm px-3 rounded-lg transition ${
                         s.incomplete
                           ? "bg-yellow-600/20 text-yellow-400"
-                          : "text-gray-600 hover:text-gray-400"
+                          : "text-gray-500 bg-gray-800 hover:text-gray-300"
                       }`}
                     >
-                      !
+                      Incomplete
                     </button>
 
-                    {/* Notes toggle */}
                     <button
                       onClick={() =>
                         updateSet(s._index, { showNotes: !s.showNotes })
                       }
                       title="Add note"
-                      className={`text-sm px-2 py-1 rounded transition ${
+                      className={`min-h-[44px] min-w-[44px] text-sm px-3 rounded-lg transition ${
                         s.notes
-                          ? "text-blue-400"
-                          : "text-gray-600 hover:text-gray-400"
+                          ? "bg-blue-600/20 text-blue-400"
+                          : "text-gray-500 bg-gray-800 hover:text-gray-300"
                       }`}
                     >
-                      note
+                      Note
                     </button>
                   </div>
 
@@ -200,7 +201,7 @@ export default function WorkoutPage() {
                       onChange={(e) =>
                         updateSet(s._index, { notes: e.target.value })
                       }
-                      className="mt-2 ml-10 w-[calc(100%-2.5rem)] bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+                      className="mt-2 w-full h-11 bg-gray-800 border border-gray-700 rounded-lg px-3 text-base focus:outline-none focus:border-blue-500"
                     />
                   )}
                 </div>
@@ -227,7 +228,7 @@ export default function WorkoutPage() {
       <button
         onClick={finishWorkout}
         disabled={saving}
-        className="w-full bg-green-600 hover:bg-green-500 disabled:bg-gray-700 disabled:text-gray-500 text-white py-3 rounded-lg font-medium transition"
+        className="w-full bg-green-600 hover:bg-green-500 disabled:bg-gray-700 disabled:text-gray-500 text-white py-3 min-h-[48px] rounded-lg font-medium text-lg transition mb-8"
       >
         {saving ? "Saving..." : "Finish Workout"}
       </button>
