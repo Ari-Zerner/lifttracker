@@ -17,7 +17,7 @@ export async function GET() {
     .orderBy(desc(workoutSessions.startedAt));
 
   const rows: string[] = [
-    "date,exercise,set_number,weight,target_reps,actual_reps,completed,incomplete,set_notes,session_notes",
+    "date,exercise,set_number,weight,target_reps,actual_reps,completed,set_notes,session_notes",
   ];
 
   for (const ws of sessions_list) {
@@ -39,7 +39,6 @@ export async function GET() {
           s.targetReps,
           s.actualReps ?? "",
           s.completed,
-          s.incomplete,
           csvEscape(s.notes ?? ""),
           csvEscape(ws.notes ?? ""),
         ].join(",")

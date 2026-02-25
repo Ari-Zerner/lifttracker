@@ -89,6 +89,5 @@ export const workoutSets = pgTable("workout_sets", {
   actualReps: integer("actual_reps"),
   weight: numeric("weight", { precision: 7, scale: 2 }),
   completed: boolean("completed").notNull().default(false),
-  incomplete: boolean("incomplete").notNull().default(false),
   notes: text("notes"),
 });

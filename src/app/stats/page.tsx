@@ -18,7 +18,6 @@ interface SetData {
   actualReps: number | null;
   weight: string | null;
   completed: boolean;
-  incomplete: boolean;
   notes: string | null;
 }
 
@@ -147,12 +146,10 @@ export default function StatsPage() {
                           className={
                             s.completed
                               ? "text-green-400"
-                              : s.incomplete
-                              ? "text-yellow-400"
                               : "text-gray-600"
                           }
                         >
-                          {s.completed ? "+" : s.incomplete ? "!" : "-"}
+                          {s.completed ? "+" : "-"}
                         </span>
                         <span>Set {s.setNumber}</span>
                         <span>{s.weight ? `${s.weight} lbs` : "- lbs"}</span>

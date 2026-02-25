@@ -12,7 +12,6 @@ interface SetState {
   actualReps: string;
   weight: string;
   completed: boolean;
-  incomplete: boolean;
   notes: string;
   showNotes: boolean;
 }
@@ -28,7 +27,6 @@ function buildInitialSets(): SetState[] {
         actualReps: "",
         weight: "",
         completed: false,
-        incomplete: false,
         notes: "",
         showNotes: false,
       });
@@ -75,7 +73,6 @@ export default function WorkoutPage() {
             actualReps: s.actualReps ? parseInt(s.actualReps) : undefined,
             weight: s.weight || undefined,
             completed: s.completed,
-            incomplete: s.incomplete,
             notes: s.notes || undefined,
           })),
         }),
@@ -113,7 +110,6 @@ export default function WorkoutPage() {
                       onClick={() =>
                         updateSet(s._index, {
                           completed: !s.completed,
-                          incomplete: !s.completed ? false : s.incomplete,
                         })
                       }
                       className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center shrink-0 transition ${
@@ -158,25 +154,8 @@ export default function WorkoutPage() {
                     </div>
                   </div>
 
-                  {/* Row 2: action buttons */}
+                  {/* Note button */}
                   <div className="flex items-center gap-2 mt-2 ml-12 sm:ml-[3.25rem]">
-                    <button
-                      onClick={() =>
-                        updateSet(s._index, {
-                          incomplete: !s.incomplete,
-                          completed: !s.incomplete ? false : s.completed,
-                        })
-                      }
-                      title="Mark as incomplete"
-                      className={`min-h-[44px] min-w-[44px] text-sm px-3 rounded-lg transition ${
-                        s.incomplete
-                          ? "bg-yellow-600/20 text-yellow-400"
-                          : "text-gray-500 bg-gray-800 hover:text-gray-300"
-                      }`}
-                    >
-                      Incomplete
-                    </button>
-
                     <button
                       onClick={() =>
                         updateSet(s._index, { showNotes: !s.showNotes })
