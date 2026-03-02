@@ -175,14 +175,15 @@ export default function WorkoutPage() {
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <input
                         type="number"
-                        inputMode="decimal"
-                        placeholder={lastWeights[`${s.exercise}:${s.setNumber}`] ?? "lbs"}
+                        inputMode="numeric"
+                        placeholder={lastWeights[`${s.exercise}:${s.setNumber}`] ?? "0"}
                         value={s.weight}
                         onChange={(e) =>
                           updateSet(s._index, { weight: e.target.value })
                         }
                         className="w-20 sm:w-24 h-11 bg-gray-800 border border-gray-700 rounded-lg px-2 text-base text-center focus:outline-none focus:border-blue-500"
                       />
+                      <span className="text-xs text-gray-500 shrink-0">lbs</span>
                       <input
                         type="number"
                         inputMode="numeric"
