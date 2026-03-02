@@ -1,9 +1,11 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { defaultWorkout } from "@/config/workouts";
 import { useRouter } from "next/navigation";
+
+const STORAGE_KEY = "lifttracker-workout";
 
 interface SetState {
   exercise: string;
@@ -38,9 +40,39 @@ function buildInitialSets(): SetState[] {
 export default function WorkoutPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [sets, setSets] = useState<SetState[]>(buildInitialSets);
-  const [sessionNotes, setSessionNotes] = useState("");
+  const [sets, setSets] = useState<SetState[]>(() => {
+    if (typeof window === "undefined") return buildInitialSets();
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.sets ?? buildInitialSets();
+      }
+    } catch {}
+    return buildInitialSets();
+  });
+  const [sessionNotes, setSessionNotes] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved).sessionNotes ?? "";
+    } catch {}
+    return "";
+  });
   const [saving, setSaving] = useState(false);
+
+  const saveToStorage = useCallback(
+    (s: SetState[], notes: string) => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ sets: s, sessionNotes: notes }));
+      } catch {}
+    },
+    []
+  );
+
+  useEffect(() => {
+    saveToStorage(sets, sessionNotes);
+  }, [sets, sessionNotes, saveToStorage]);
 
   if (status === "loading") {
     return <p className="text-gray-500 py-12 text-center">Loading...</p>;
@@ -78,6 +110,7 @@ export default function WorkoutPage() {
         }),
       });
       if (res.ok) {
+        localStorage.removeItem(STORAGE_KEY);
         router.push("/");
       }
     } finally {
