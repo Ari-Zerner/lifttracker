@@ -30,16 +30,19 @@ export default function StatsPage() {
   const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
   const [selectedWorkout, setSelectedWorkout] = useState<SessionWithSets | null>(null);
   const [exerciseFilter, setExerciseFilter] = useState("all");
+  const [maxWeights, setMaxWeights] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (session?.user) {
-      fetch("/api/workouts")
-        .then((r) => r.json())
-        .then((data) => {
-          setWorkouts(data);
-          setLoading(false);
-        });
+      Promise.all([
+        fetch("/api/workouts").then((r) => r.json()),
+        fetch("/api/stats").then((r) => r.json()),
+      ]).then(([workoutData, statsData]) => {
+        setWorkouts(workoutData);
+        if (statsData.maxWeights) setMaxWeights(statsData.maxWeights);
+        setLoading(false);
+      });
     }
   }, [session]);
 
@@ -81,6 +84,27 @@ export default function StatsPage() {
           Export CSV
         </a>
       </div>
+
+      {/* Max weights */}
+      {Object.keys(maxWeights).length > 0 && (
+        <div className="mb-6 bg-gray-900 border border-gray-800 rounded-lg p-4">
+          <h2 className="text-sm font-semibold text-gray-400 mb-3">
+            Personal Bests (completed sets)
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            {defaultWorkout.exercises.map((ex) => (
+              <div key={ex.key}>
+                <span className="text-sm text-gray-500">{ex.name}</span>
+                <p className="text-lg font-bold">
+                  {maxWeights[ex.key]
+                    ? `${maxWeights[ex.key]} lbs`
+                    : "-"}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Exercise filter */}
       <div className="mb-6">

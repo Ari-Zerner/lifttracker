@@ -60,6 +60,16 @@ export default function WorkoutPage() {
     return "";
   });
   const [saving, setSaving] = useState(false);
+  const [lastWeights, setLastWeights] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    fetch("/api/stats")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.lastWeights) setLastWeights(data.lastWeights);
+      })
+      .catch(() => {});
+  }, []);
 
   const saveToStorage = useCallback(
     (s: SetState[], notes: string) => {
@@ -166,7 +176,7 @@ export default function WorkoutPage() {
                       <input
                         type="number"
                         inputMode="decimal"
-                        placeholder="lbs"
+                        placeholder={lastWeights[`${s.exercise}:${s.setNumber}`] ?? "lbs"}
                         value={s.weight}
                         onChange={(e) =>
                           updateSet(s._index, { weight: e.target.value })
