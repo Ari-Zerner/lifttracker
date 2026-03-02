@@ -113,7 +113,7 @@ export default function WorkoutPage() {
             setNumber: s.setNumber,
             targetReps: s.targetReps,
             actualReps: s.actualReps ? parseInt(s.actualReps) : undefined,
-            weight: s.weight || undefined,
+            weight: s.weight ? parseInt(s.weight) : undefined,
             completed: s.completed,
             notes: s.notes || undefined,
           })),

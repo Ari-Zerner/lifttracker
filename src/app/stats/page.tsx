@@ -16,7 +16,7 @@ interface SetData {
   setNumber: number;
   targetReps: number;
   actualReps: number | null;
-  weight: string | null;
+  weight: number | null;
   completed: boolean;
   notes: string | null;
 }
@@ -176,7 +176,7 @@ export default function StatsPage() {
                           {s.completed ? "+" : "-"}
                         </span>
                         <span>Set {s.setNumber}</span>
-                        <span>{s.weight ? `${s.weight} lbs` : "- lbs"}</span>
+                        <span>{s.weight != null ? `${s.weight} lbs` : "- lbs"}</span>
                         <span>
                           {s.actualReps ?? s.targetReps}/{s.targetReps} reps
                         </span>

@@ -14,7 +14,7 @@ export async function GET() {
   const maxWeights = await db
     .select({
       exercise: workoutSets.exercise,
-      maxWeight: sql<string>`max(${workoutSets.weight})`,
+      maxWeight: sql<number>`max(${workoutSets.weight})`,
     })
     .from(workoutSets)
     .innerJoin(
@@ -52,7 +52,7 @@ export async function GET() {
 
     for (const s of sets) {
       if (s.weight) {
-        lastWeights[`${s.exercise}:${s.setNumber}`] = s.weight;
+        lastWeights[`${s.exercise}:${s.setNumber}`] = String(s.weight);
       }
     }
   }
@@ -60,7 +60,7 @@ export async function GET() {
   const maxWeightMap: Record<string, string> = {};
   for (const row of maxWeights) {
     if (row.maxWeight) {
-      maxWeightMap[row.exercise] = row.maxWeight;
+      maxWeightMap[row.exercise] = String(row.maxWeight);
     }
   }
 

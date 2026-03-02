@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       setNumber: number;
       targetReps: number;
       actualReps?: number;
-      weight?: string;
+      weight?: number;
       completed: boolean;
       notes?: string;
     }[];
