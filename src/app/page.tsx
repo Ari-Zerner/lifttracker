@@ -63,20 +63,22 @@ export default async function Home() {
         ) : (
           <ul className="space-y-2">
             {recentWorkouts.map((w) => (
-              <li
-                key={w.id}
-                className="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 flex items-center justify-between"
-              >
-                <span>
-                  {(w.completedAt ?? w.startedAt).toLocaleDateString("en-US", {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </span>
-                <span className="text-sm text-gray-500">
-                  {w.completedAt ? "Completed" : "In Progress"}
-                </span>
+              <li key={w.id}>
+                <Link
+                  href={`/stats?workout=${w.id}`}
+                  className="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 flex items-center justify-between hover:border-gray-700 transition block"
+                >
+                  <span>
+                    {(w.completedAt ?? w.startedAt).toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    {w.completedAt ? "Completed" : "In Progress"}
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>

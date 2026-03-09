@@ -1,7 +1,8 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { defaultWorkout } from "@/config/workouts";
 
 interface WorkoutSession {
@@ -26,7 +27,16 @@ interface SessionWithSets extends WorkoutSession {
 }
 
 export default function StatsPage() {
+  return (
+    <Suspense fallback={<p className="text-gray-500 py-12 text-center">Loading...</p>}>
+      <StatsContent />
+    </Suspense>
+  );
+}
+
+function StatsContent() {
   const { data: session, status } = useSession();
+  const searchParams = useSearchParams();
   const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
   const [selectedWorkout, setSelectedWorkout] = useState<SessionWithSets | null>(null);
   const [exerciseFilter, setExerciseFilter] = useState("all");
@@ -42,6 +52,11 @@ export default function StatsPage() {
         setWorkouts(workoutData);
         if (statsData.maxWeights) setMaxWeights(statsData.maxWeights);
         setLoading(false);
+
+        const workoutId = searchParams.get("workout");
+        if (workoutId) {
+          viewWorkout(workoutId);
+        }
       });
     }
   }, [session]);
@@ -170,7 +185,9 @@ export default function StatsPage() {
                           className={
                             s.completed
                               ? "text-green-400"
-                              : "text-gray-600"
+                              : s.actualReps != null && s.actualReps > 0
+                                ? "text-yellow-400"
+                                : "text-gray-600"
                           }
                         >
                           {s.completed ? "+" : "-"}
