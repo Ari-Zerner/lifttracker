@@ -189,7 +189,7 @@ function StatsContent() {
                           <span>Set {s.setNumber}</span>
                           <span>{s.weight != null ? `${s.weight} lbs` : "- lbs"}</span>
                           <span>
-                            {s.actualReps ?? s.targetReps}/{s.targetReps} reps
+                            {s.actualReps != null ? s.actualReps : "-"}/{s.targetReps} reps
                           </span>
                           {s.notes && (
                             <span className="text-gray-600 italic">
