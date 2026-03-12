@@ -34,7 +34,6 @@ export async function POST(req: NextRequest) {
       targetReps: number;
       actualReps?: number;
       weight?: number;
-      completed: boolean;
       notes?: string;
     }[];
   };
@@ -57,7 +56,6 @@ export async function POST(req: NextRequest) {
         targetReps: s.targetReps,
         actualReps: s.actualReps ?? null,
         weight: s.weight ?? null,
-        completed: s.completed,
         notes: s.notes || null,
       }))
     );

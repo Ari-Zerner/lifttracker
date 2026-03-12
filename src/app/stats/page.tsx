@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { defaultWorkout } from "@/config/workouts";
 
@@ -18,20 +18,11 @@ interface SetData {
   targetReps: number;
   actualReps: number | null;
   weight: number | null;
-  completed: boolean;
   notes: string | null;
 }
 
 interface SessionWithSets extends WorkoutSession {
   sets: SetData[];
-}
-
-export default function StatsPage() {
-  return (
-    <Suspense fallback={<p className="text-gray-500 py-12 text-center">Loading...</p>}>
-      <StatsContent />
-    </Suspense>
-  );
 }
 
 function StatsContent() {
@@ -42,6 +33,12 @@ function StatsContent() {
   const [exerciseFilter, setExerciseFilter] = useState("all");
   const [maxWeights, setMaxWeights] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+
+  async function viewWorkout(id: string) {
+    const res = await fetch(`/api/workouts/${id}`);
+    const data = await res.json();
+    setSelectedWorkout(data);
+  }
 
   useEffect(() => {
     if (session?.user) {
@@ -59,7 +56,7 @@ function StatsContent() {
         }
       });
     }
-  }, [session]);
+  }, [session, searchParams]);
 
   if (status === "loading" || loading) {
     return <p className="text-gray-500 py-12 text-center">Loading...</p>;
@@ -71,12 +68,6 @@ function StatsContent() {
         Sign in to view stats.
       </p>
     );
-  }
-
-  async function viewWorkout(id: string) {
-    const res = await fetch(`/api/workouts/${id}`);
-    const data = await res.json();
-    setSelectedWorkout(data);
   }
 
   function formatDate(dateStr: string) {
@@ -176,34 +167,38 @@ function StatsContent() {
                     {ex.name}
                   </h3>
                   <div className="space-y-1">
-                    {sets.map((s, i) => (
-                      <div
-                        key={i}
-                        className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-gray-400"
-                      >
-                        <span
-                          className={
-                            s.completed
-                              ? "text-green-400"
-                              : s.actualReps != null && s.actualReps > 0
+                    {sets.map((s, i) => {
+                      const isComplete = s.actualReps != null && s.actualReps >= s.targetReps;
+                      const isPartial = s.actualReps != null && s.actualReps > 0;
+                      return (
+                        <div
+                          key={i}
+                          className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-gray-400"
+                        >
+                          <span
+                            className={
+                              isComplete
+                                ? "text-green-400"
+                                : isPartial
                                 ? "text-yellow-400"
                                 : "text-gray-600"
-                          }
-                        >
-                          {s.completed ? "+" : "-"}
-                        </span>
-                        <span>Set {s.setNumber}</span>
-                        <span>{s.weight != null ? `${s.weight} lbs` : "- lbs"}</span>
-                        <span>
-                          {s.actualReps ?? s.targetReps}/{s.targetReps} reps
-                        </span>
-                        {s.notes && (
-                          <span className="text-gray-600 italic">
-                            {s.notes}
+                            }
+                          >
+                            {isComplete ? "+" : "-"}
                           </span>
-                        )}
-                      </div>
-                    ))}
+                          <span>Set {s.setNumber}</span>
+                          <span>{s.weight != null ? `${s.weight} lbs` : "- lbs"}</span>
+                          <span>
+                            {s.actualReps ?? s.targetReps}/{s.targetReps} reps
+                          </span>
+                          {s.notes && (
+                            <span className="text-gray-600 italic">
+                              {s.notes}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -234,5 +229,13 @@ function StatsContent() {
         </ul>
       )}
     </div>
+  );
+}
+
+export default function StatsPage() {
+  return (
+    <Suspense fallback={<p className="text-gray-500 py-12 text-center">Loading...</p>}>
+      <StatsContent />
+    </Suspense>
   );
 }

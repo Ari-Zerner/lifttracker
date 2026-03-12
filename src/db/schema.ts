@@ -3,7 +3,6 @@ import {
   text,
   timestamp,
   integer,
-  boolean,
   uuid,
   primaryKey,
 } from "drizzle-orm/pg-core";
@@ -87,6 +86,5 @@ export const workoutSets = pgTable("workout_sets", {
   targetReps: integer("target_reps").notNull(),
   actualReps: integer("actual_reps"),
   weight: integer("weight"),
-  completed: boolean("completed").notNull().default(false),
   notes: text("notes"),
 });

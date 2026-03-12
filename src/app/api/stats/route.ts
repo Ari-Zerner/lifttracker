@@ -24,7 +24,7 @@ export async function GET() {
     .where(
       and(
         eq(workoutSessions.userId, session.user.id),
-        eq(workoutSets.completed, true),
+        sql`${workoutSets.actualReps} >= ${workoutSets.targetReps}`,
         sql`${workoutSets.weight} is not null`
       )
     )

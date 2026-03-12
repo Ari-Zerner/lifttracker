@@ -114,7 +114,6 @@ export default function WorkoutPage() {
             targetReps: s.targetReps,
             actualReps: s.actualReps ? parseInt(s.actualReps) : undefined,
             weight: s.weight ? parseInt(s.weight) : undefined,
-            completed: s.completed,
             notes: s.notes || undefined,
           })),
         }),
