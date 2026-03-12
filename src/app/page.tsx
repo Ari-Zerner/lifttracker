@@ -75,9 +75,7 @@ export default async function Home() {
                       day: "numeric",
                     })}
                   </span>
-                  <span className="text-sm text-gray-500">
-                    {w.completedAt ? "Completed" : "In Progress"}
-                  </span>
+                  <span className="text-sm text-gray-500">→</span>
                 </Link>
               </li>
             ))}

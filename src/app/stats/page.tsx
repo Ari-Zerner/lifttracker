@@ -153,7 +153,7 @@ function StatsContent() {
                     {formatDate(w.completedAt ?? w.startedAt)}
                   </span>
                   <span className="text-sm text-gray-500">
-                    {w.completedAt ? "Completed" : "In Progress"}
+                    {expanded ? "▲" : "▼"}
                   </span>
                 </button>
 
