@@ -29,15 +29,23 @@ function StatsContent() {
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
   const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
-  const [selectedWorkout, setSelectedWorkout] = useState<SessionWithSets | null>(null);
+  const [expandedWorkouts, setExpandedWorkouts] = useState<Record<string, SessionWithSets>>({});
   const [exerciseFilter, setExerciseFilter] = useState("all");
   const [maxWeights, setMaxWeights] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
-  async function viewWorkout(id: string) {
-    const res = await fetch(`/api/workouts/${id}`);
-    const data = await res.json();
-    setSelectedWorkout(data);
+  async function toggleWorkout(id: string) {
+    if (expandedWorkouts[id]) {
+      setExpandedWorkouts((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    } else {
+      const res = await fetch(`/api/workouts/${id}`);
+      const data = await res.json();
+      setExpandedWorkouts((prev) => ({ ...prev, [id]: data }));
+    }
   }
 
   useEffect(() => {
@@ -52,7 +60,7 @@ function StatsContent() {
 
         const workoutId = searchParams.get("workout");
         if (workoutId) {
-          viewWorkout(workoutId);
+          toggleWorkout(workoutId);
         }
       });
     }
@@ -128,104 +136,92 @@ function StatsContent() {
         </select>
       </div>
 
-      {/* Workout detail modal */}
-      {selectedWorkout && (
-        <div className="mb-6 bg-gray-900 border border-gray-800 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold">
-              {formatDate(
-                selectedWorkout.completedAt ?? selectedWorkout.startedAt
-              )}
-            </h2>
-            <button
-              onClick={() => setSelectedWorkout(null)}
-              className="text-gray-500 hover:text-white text-sm"
-            >
-              Close
-            </button>
-          </div>
-
-          {selectedWorkout.notes && (
-            <p className="text-sm text-gray-400 mb-4 italic">
-              {selectedWorkout.notes}
-            </p>
-          )}
-
-          {defaultWorkout.exercises
-            .filter(
-              (ex) => exerciseFilter === "all" || ex.key === exerciseFilter
-            )
-            .map((ex) => {
-              const sets = selectedWorkout.sets.filter(
-                (s) => s.exercise === ex.key
-              );
-              if (sets.length === 0) return null;
-
-              return (
-                <div key={ex.key} className="mb-3">
-                  <h3 className="text-sm font-medium text-gray-300 mb-1">
-                    {ex.name}
-                  </h3>
-                  <div className="space-y-1">
-                    {sets.map((s, i) => {
-                      const isComplete = s.actualReps != null && s.actualReps >= s.targetReps;
-                      const isPartial = s.actualReps != null && s.actualReps > 0;
-                      return (
-                        <div
-                          key={i}
-                          className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-gray-400"
-                        >
-                          <span
-                            className={
-                              isComplete
-                                ? "text-green-400"
-                                : isPartial
-                                ? "text-yellow-400"
-                                : "text-gray-600"
-                            }
-                          >
-                            {isComplete ? "+" : "-"}
-                          </span>
-                          <span>Set {s.setNumber}</span>
-                          <span>{s.weight != null ? `${s.weight} lbs` : "- lbs"}</span>
-                          <span>
-                            {s.actualReps != null ? s.actualReps : "-"}/{s.targetReps} reps
-                          </span>
-                          {s.notes && (
-                            <span className="text-gray-600 italic">
-                              {s.notes}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-        </div>
-      )}
-
       {/* Workouts list */}
       {workouts.length === 0 ? (
         <p className="text-gray-500">No workouts recorded yet.</p>
       ) : (
         <ul className="space-y-2">
-          {workouts.map((w) => (
-            <li key={w.id}>
-              <button
-                onClick={() => viewWorkout(w.id)}
-                className="w-full text-left bg-gray-900 border border-gray-800 rounded-lg px-4 py-4 flex items-center justify-between hover:border-gray-700 transition"
-              >
-                <span>
-                  {formatDate(w.completedAt ?? w.startedAt)}
-                </span>
-                <span className="text-sm text-gray-500">
-                  {w.completedAt ? "Completed" : "In Progress"}
-                </span>
-              </button>
-            </li>
-          ))}
+          {workouts.map((w) => {
+            const expanded = expandedWorkouts[w.id];
+            return (
+              <li key={w.id} className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => toggleWorkout(w.id)}
+                  className="w-full text-left px-4 py-4 flex items-center justify-between hover:bg-gray-800/50 transition"
+                >
+                  <span>
+                    {formatDate(w.completedAt ?? w.startedAt)}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    {w.completedAt ? "Completed" : "In Progress"}
+                  </span>
+                </button>
+
+                {expanded && (
+                  <div className="px-4 pb-4 border-t border-gray-800 pt-3">
+                    {expanded.notes && (
+                      <p className="text-sm text-gray-400 mb-3 italic">
+                        {expanded.notes}
+                      </p>
+                    )}
+
+                    {defaultWorkout.exercises
+                      .filter(
+                        (ex) => exerciseFilter === "all" || ex.key === exerciseFilter
+                      )
+                      .map((ex) => {
+                        const sets = expanded.sets.filter(
+                          (s) => s.exercise === ex.key
+                        );
+                        if (sets.length === 0) return null;
+
+                        return (
+                          <div key={ex.key} className="mb-3">
+                            <h3 className="text-sm font-medium text-gray-300 mb-1">
+                              {ex.name}
+                            </h3>
+                            <div className="space-y-1">
+                              {sets.map((s, i) => {
+                                const isComplete = s.actualReps != null && s.actualReps >= s.targetReps;
+                                const isPartial = s.actualReps != null && s.actualReps > 0;
+                                return (
+                                  <div
+                                    key={i}
+                                    className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-gray-400"
+                                  >
+                                    <span
+                                      className={
+                                        isComplete
+                                          ? "text-green-400"
+                                          : isPartial
+                                          ? "text-yellow-400"
+                                          : "text-gray-600"
+                                      }
+                                    >
+                                      {isComplete ? "+" : "-"}
+                                    </span>
+                                    <span>Set {s.setNumber}</span>
+                                    <span>{s.weight != null ? `${s.weight} lbs` : "- lbs"}</span>
+                                    <span>
+                                      {s.actualReps != null ? s.actualReps : "-"}/{s.targetReps} reps
+                                    </span>
+                                    {s.notes && (
+                                      <span className="text-gray-600 italic">
+                                        {s.notes}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
