@@ -30,30 +30,32 @@ export async function GET() {
     )
     .groupBy(workoutSets.exercise);
 
-  // Most recent workout's weights per exercise+set
-  const [latestSession] = await db
-    .select()
-    .from(workoutSessions)
+  // Most recent non-null, non-zero weight per exercise+set (across all sessions)
+  const lastWeightRows = await db
+    .select({
+      exercise: workoutSets.exercise,
+      setNumber: workoutSets.setNumber,
+      weight: workoutSets.weight,
+    })
+    .from(workoutSets)
+    .innerJoin(
+      workoutSessions,
+      eq(workoutSets.sessionId, workoutSessions.id)
+    )
     .where(
       and(
         eq(workoutSessions.userId, session.user.id),
-        sql`${workoutSessions.completedAt} is not null`
+        sql`${workoutSets.weight} is not null`,
+        sql`${workoutSets.weight} > 0`
       )
     )
-    .orderBy(desc(workoutSessions.completedAt))
-    .limit(1);
+    .orderBy(desc(workoutSessions.completedAt));
 
-  let lastWeights: Record<string, string> = {};
-  if (latestSession) {
-    const sets = await db
-      .select()
-      .from(workoutSets)
-      .where(eq(workoutSets.sessionId, latestSession.id));
-
-    for (const s of sets) {
-      if (s.weight) {
-        lastWeights[`${s.exercise}:${s.setNumber}`] = String(s.weight);
-      }
+  const lastWeights: Record<string, string> = {};
+  for (const s of lastWeightRows) {
+    const key = `${s.exercise}:${s.setNumber}`;
+    if (!lastWeights[key]) {
+      lastWeights[key] = String(s.weight);
     }
   }
 
