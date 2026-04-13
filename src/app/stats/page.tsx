@@ -4,6 +4,23 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { defaultWorkout } from "@/config/workouts";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  Legend,
+} from "recharts";
+
+const EXERCISE_COLORS: Record<string, string> = {
+  deadlifts: "#ef4444",
+  squats: "#3b82f6",
+  bench_press: "#22c55e",
+  rows: "#f59e0b",
+};
 
 interface WorkoutSession {
   id: string;
@@ -44,7 +61,9 @@ function StatsContent() {
   const [editNotes, setEditNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [exerciseFilter, setExerciseFilter] = useState("all");
+  const [chartType, setChartType] = useState<"weight" | "completion">("weight");
   const [maxWeights, setMaxWeights] = useState<Record<string, string>>({});
+  const [chartData, setChartData] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function toggleWorkout(id: string) {
@@ -117,6 +136,7 @@ function StatsContent() {
       ]).then(([workoutData, statsData]) => {
         setWorkouts(workoutData);
         if (statsData.maxWeights) setMaxWeights(statsData.maxWeights);
+        if (statsData.chartData) setChartData(statsData.chartData);
         setLoading(false);
 
         const workoutId = searchParams.get("workout");
@@ -148,6 +168,18 @@ function StatsContent() {
     });
   }
 
+  function formatShortDate(dateStr: string) {
+    return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  }
+
+  const filteredExercises =
+    exerciseFilter === "all"
+      ? defaultWorkout.exercises
+      : defaultWorkout.exercises.filter((ex) => ex.key === exerciseFilter);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -178,6 +210,115 @@ function StatsContent() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Charts */}
+      {chartData.length > 1 && (
+        <div className="mb-6 bg-gray-900 border border-gray-800 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              onClick={() => setChartType("weight")}
+              className={`text-sm px-3 py-1.5 rounded-lg transition ${
+                chartType === "weight"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-800 text-gray-400 hover:text-gray-300"
+              }`}
+            >
+              Weight
+            </button>
+            <button
+              onClick={() => setChartType("completion")}
+              className={`text-sm px-3 py-1.5 rounded-lg transition ${
+                chartType === "completion"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-800 text-gray-400 hover:text-gray-300"
+              }`}
+            >
+              Completion
+            </button>
+          </div>
+
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis
+                dataKey="date"
+                tickFormatter={formatShortDate}
+                stroke="#6b7280"
+                fontSize={12}
+              />
+              <YAxis
+                stroke="#6b7280"
+                fontSize={12}
+                domain={chartType === "completion" ? [0, 100] : ["auto", "auto"]}
+                tickFormatter={chartType === "completion" ? (v: number) => `${v}%` : undefined}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#1f2937",
+                  border: "1px solid #374151",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                }}
+                labelFormatter={(label) => formatShortDate(String(label))}
+                formatter={(value, name) => {
+                  const n = String(name);
+                  const ex = defaultWorkout.exercises.find(
+                    (e) => n === `weight_${e.key}` || n === `completion_${e.key}` || n === "completionRate"
+                  );
+                  const label = n === "completionRate" ? "Overall" : ex?.name ?? n;
+                  return [
+                    chartType === "completion" ? `${value}%` : `${value} lbs`,
+                    label,
+                  ];
+                }}
+              />
+              <Legend
+                formatter={(value: string) => {
+                  if (value === "completionRate") return "Overall";
+                  const ex = defaultWorkout.exercises.find(
+                    (e) => value === `weight_${e.key}` || value === `completion_${e.key}`
+                  );
+                  return ex?.name ?? value;
+                }}
+              />
+              {chartType === "weight" &&
+                filteredExercises.map((ex) => (
+                  <Line
+                    key={ex.key}
+                    type="monotone"
+                    dataKey={`weight_${ex.key}`}
+                    stroke={EXERCISE_COLORS[ex.key] ?? "#8b5cf6"}
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    connectNulls
+                  />
+                ))}
+              {chartType === "completion" && exerciseFilter === "all" && (
+                <Line
+                  type="monotone"
+                  dataKey="completionRate"
+                  stroke="#8b5cf6"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  connectNulls
+                />
+              )}
+              {chartType === "completion" &&
+                filteredExercises.map((ex) => (
+                  <Line
+                    key={ex.key}
+                    type="monotone"
+                    dataKey={`completion_${ex.key}`}
+                    stroke={EXERCISE_COLORS[ex.key] ?? "#8b5cf6"}
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    connectNulls
+                  />
+                ))}
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       )}
 

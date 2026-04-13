@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { workoutSessions, workoutSets } from "@/db/schema";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, asc, sql } from "drizzle-orm";
 
 export async function GET() {
   const session = await auth();
@@ -66,5 +66,62 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ maxWeights: maxWeightMap, lastWeights });
+  // Chart data: per-session stats for weight progression and completion rate
+  const allSessions = await db
+    .select()
+    .from(workoutSessions)
+    .where(
+      and(
+        eq(workoutSessions.userId, session.user.id),
+        sql`${workoutSessions.completedAt} is not null`
+      )
+    )
+    .orderBy(asc(workoutSessions.completedAt));
+
+  const chartData = [];
+  for (const ws of allSessions) {
+    const sets = await db
+      .select()
+      .from(workoutSets)
+      .where(eq(workoutSets.sessionId, ws.id));
+
+    const date = (ws.completedAt ?? ws.startedAt).toISOString().split("T")[0];
+    const entry: Record<string, unknown> = { date, sessionId: ws.id };
+
+    // Max weight per exercise for this session
+    const exerciseMaxWeights: Record<string, number> = {};
+    let totalSets = 0;
+    let completedSets = 0;
+    const exerciseCompletion: Record<string, { total: number; completed: number }> = {};
+
+    for (const s of sets) {
+      if (s.weight != null && s.weight > 0) {
+        exerciseMaxWeights[s.exercise] = Math.max(
+          exerciseMaxWeights[s.exercise] ?? 0,
+          s.weight
+        );
+      }
+      totalSets++;
+      const isComplete = s.actualReps != null && s.actualReps >= s.targetReps;
+      if (isComplete) completedSets++;
+
+      if (!exerciseCompletion[s.exercise]) {
+        exerciseCompletion[s.exercise] = { total: 0, completed: 0 };
+      }
+      exerciseCompletion[s.exercise].total++;
+      if (isComplete) exerciseCompletion[s.exercise].completed++;
+    }
+
+    for (const [ex, w] of Object.entries(exerciseMaxWeights)) {
+      entry[`weight_${ex}`] = w;
+    }
+    entry.completionRate = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
+    for (const [ex, c] of Object.entries(exerciseCompletion)) {
+      entry[`completion_${ex}`] = c.total > 0 ? Math.round((c.completed / c.total) * 100) : 0;
+    }
+
+    chartData.push(entry);
+  }
+
+  return NextResponse.json({ maxWeights: maxWeightMap, lastWeights, chartData });
 }
