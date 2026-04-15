@@ -7,6 +7,8 @@ import { defaultWorkout } from "@/config/workouts";
 import {
   LineChart,
   Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
@@ -60,7 +62,9 @@ function StatsContent() {
   const [editSets, setEditSets] = useState<EditSetState[]>([]);
   const [editNotes, setEditNotes] = useState("");
   const [saving, setSaving] = useState(false);
-  const [exerciseFilter, setExerciseFilter] = useState("all");
+  const [visibleExercises, setVisibleExercises] = useState<Set<string>>(
+    () => new Set(defaultWorkout.exercises.map((ex) => ex.key))
+  );
   const [chartType, setChartType] = useState<"weight" | "completion">("weight");
   const [maxWeights, setMaxWeights] = useState<Record<string, string>>({});
   const [chartData, setChartData] = useState<Record<string, unknown>[]>([]);
@@ -175,10 +179,21 @@ function StatsContent() {
     });
   }
 
-  const filteredExercises =
-    exerciseFilter === "all"
-      ? defaultWorkout.exercises
-      : defaultWorkout.exercises.filter((ex) => ex.key === exerciseFilter);
+  function toggleExercise(key: string) {
+    setVisibleExercises((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
+
+  const filteredExercises = defaultWorkout.exercises.filter((ex) =>
+    visibleExercises.has(ex.key)
+  );
 
   return (
     <div>
@@ -213,6 +228,28 @@ function StatsContent() {
         </div>
       )}
 
+      {/* Exercise toggles */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        {defaultWorkout.exercises.map((ex) => {
+          const active = visibleExercises.has(ex.key);
+          const color = EXERCISE_COLORS[ex.key] ?? "#8b5cf6";
+          return (
+            <button
+              key={ex.key}
+              onClick={() => toggleExercise(ex.key)}
+              className={`text-sm px-3 py-1.5 rounded-lg transition border ${
+                active
+                  ? "text-white border-transparent"
+                  : "text-gray-500 border-gray-700 bg-gray-900"
+              }`}
+              style={active ? { backgroundColor: color } : undefined}
+            >
+              {ex.name}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Charts */}
       {chartData.length > 1 && (
         <div className="mb-6 bg-gray-900 border border-gray-800 rounded-lg p-4">
@@ -239,104 +276,94 @@ function StatsContent() {
             </button>
           </div>
 
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis
-                dataKey="date"
-                tickFormatter={formatShortDate}
-                stroke="#6b7280"
-                fontSize={12}
-              />
-              <YAxis
-                stroke="#6b7280"
-                fontSize={12}
-                domain={chartType === "completion" ? [0, 100] : ["auto", "auto"]}
-                tickFormatter={chartType === "completion" ? (v: number) => `${v}%` : undefined}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1f2937",
-                  border: "1px solid #374151",
-                  borderRadius: "8px",
-                  fontSize: "12px",
-                }}
-                labelFormatter={(label) => formatShortDate(String(label))}
-                formatter={(value, name) => {
-                  const n = String(name);
-                  const ex = defaultWorkout.exercises.find(
-                    (e) => n === `weight_${e.key}` || n === `completion_${e.key}` || n === "completionRate"
-                  );
-                  const label = n === "completionRate" ? "Overall" : ex?.name ?? n;
-                  return [
-                    chartType === "completion" ? `${value}%` : `${value} lbs`,
-                    label,
-                  ];
-                }}
-              />
-              <Legend
-                formatter={(value: string) => {
-                  if (value === "completionRate") return "Overall";
-                  const ex = defaultWorkout.exercises.find(
-                    (e) => value === `weight_${e.key}` || value === `completion_${e.key}`
-                  );
-                  return ex?.name ?? value;
-                }}
-              />
-              {chartType === "weight" &&
-                filteredExercises.map((ex) => (
+          {chartType === "weight" && (
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={formatShortDate}
+                  stroke="#6b7280"
+                  fontSize={12}
+                />
+                <YAxis
+                  stroke="#6b7280"
+                  fontSize={12}
+                  label={{ value: "lbs", angle: -90, position: "insideLeft", fill: "#6b7280", fontSize: 12 }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1f2937",
+                    border: "1px solid #374151",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                  }}
+                  labelFormatter={(label) => formatShortDate(String(label))}
+                  formatter={(value, name) => {
+                    const n = String(name);
+                    const ex = defaultWorkout.exercises.find((e) => n === `weight_${e.key}`);
+                    return [`${value} lbs`, ex?.name ?? n];
+                  }}
+                />
+                {filteredExercises.map((ex) => (
                   <Line
                     key={ex.key}
                     type="monotone"
                     dataKey={`weight_${ex.key}`}
+                    name={ex.name}
                     stroke={EXERCISE_COLORS[ex.key] ?? "#8b5cf6"}
                     strokeWidth={2}
                     dot={{ r: 3 }}
                     connectNulls
                   />
                 ))}
-              {chartType === "completion" && exerciseFilter === "all" && (
-                <Line
-                  type="monotone"
-                  dataKey="completionRate"
-                  stroke="#8b5cf6"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+
+          {chartType === "completion" && (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={formatShortDate}
+                  stroke="#6b7280"
+                  fontSize={12}
                 />
-              )}
-              {chartType === "completion" &&
-                filteredExercises.map((ex) => (
-                  <Line
+                <YAxis
+                  stroke="#6b7280"
+                  fontSize={12}
+                  domain={[0, 100]}
+                  label={{ value: "%", angle: -90, position: "insideLeft", fill: "#6b7280", fontSize: 12 }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1f2937",
+                    border: "1px solid #374151",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                  }}
+                  labelFormatter={(label) => formatShortDate(String(label))}
+                  formatter={(value, name) => {
+                    const n = String(name);
+                    const ex = defaultWorkout.exercises.find((e) => n === `completion_${e.key}`);
+                    return [`${value}%`, ex?.name ?? n];
+                  }}
+                />
+                {filteredExercises.map((ex) => (
+                  <Bar
                     key={ex.key}
-                    type="monotone"
                     dataKey={`completion_${ex.key}`}
-                    stroke={EXERCISE_COLORS[ex.key] ?? "#8b5cf6"}
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                    connectNulls
+                    name={ex.name}
+                    fill={EXERCISE_COLORS[ex.key] ?? "#8b5cf6"}
                   />
                 ))}
-            </LineChart>
-          </ResponsiveContainer>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
       )}
-
-      {/* Exercise filter */}
-      <div className="mb-6">
-        <select
-          value={exerciseFilter}
-          onChange={(e) => setExerciseFilter(e.target.value)}
-          className="w-full sm:w-auto bg-gray-900 border border-gray-800 rounded-lg px-3 py-2.5 min-h-[44px] text-base focus:outline-none focus:border-blue-500"
-        >
-          <option value="all">All Exercises</option>
-          {defaultWorkout.exercises.map((ex) => (
-            <option key={ex.key} value={ex.key}>
-              {ex.name}
-            </option>
-          ))}
-        </select>
-      </div>
 
       {/* Workouts list */}
       {workouts.length === 0 ? (
@@ -379,7 +406,7 @@ function StatsContent() {
 
                     {defaultWorkout.exercises
                       .filter(
-                        (ex) => exerciseFilter === "all" || ex.key === exerciseFilter
+                        (ex) => visibleExercises.has(ex.key)
                       )
                       .map((ex) => {
                         const sets = expanded.sets.filter(
@@ -436,7 +463,7 @@ function StatsContent() {
                   <div className="px-4 pb-4 border-t border-gray-800 pt-3">
                     {defaultWorkout.exercises
                       .filter(
-                        (ex) => exerciseFilter === "all" || ex.key === exerciseFilter
+                        (ex) => visibleExercises.has(ex.key)
                       )
                       .map((ex) => {
                         const sets = editSets
