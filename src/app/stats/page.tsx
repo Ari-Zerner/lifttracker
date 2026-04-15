@@ -18,10 +18,10 @@ import {
 } from "recharts";
 
 const EXERCISE_COLORS: Record<string, string> = {
-  deadlifts: "#ef4444",
-  squats: "#3b82f6",
-  bench_press: "#22c55e",
-  rows: "#f59e0b",
+  deadlift: "#ef4444",
+  squat: "#3b82f6",
+  bench: "#22c55e",
+  row: "#f59e0b",
 };
 
 interface WorkoutSession {
