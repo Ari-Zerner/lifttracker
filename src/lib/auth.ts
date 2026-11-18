@@ -4,6 +4,7 @@ import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/db";
 import { accounts, sessions, users, verificationTokens } from "@/db/schema";
 import { BROKER_REDIRECT_URI } from "@/lib/broker";
+import { eq } from "drizzle-orm";
 
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 
@@ -39,6 +40,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    // Ari-only app on the shared Keel Apps client: only an existing user's Google-verified email may
+    // sign in, so no one else can create an account (and email linking above can't attach a stranger).
+    async signIn({ profile }) {
+      const email = typeof profile?.email === "string" ? profile.email.toLowerCase() : "";
+      if (!email || profile?.email_verified !== true) return false;
+      const found = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+      return found.length > 0;
+    },
     jwt({ token, user }) {
       if (user) token.id = user.id;
       return token;
