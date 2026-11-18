@@ -1,8 +1,11 @@
-import NextAuth from "next-auth";
+import NextAuth, { customFetch } from "next-auth";
 import Google from "next-auth/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/db";
 import { accounts, sessions, users, verificationTokens } from "@/db/schema";
+import { BROKER_REDIRECT_URI } from "@/lib/broker";
+
+const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -14,9 +17,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   }),
   session: { strategy: "jwt" },
   providers: [
+    // Signs in with the "Keel Apps" Google client through the shared callback (see lib/broker.ts).
+    // Google's `sub` is the same for a user across clients, so existing accounts rows still match.
     Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      clientId: process.env.GOOGLE_KEEL_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_KEEL_CLIENT_SECRET,
+      checks: ["pkce", "state"],
+      // Fallback if Google ever gave this client a different `sub`: link by (Google-verified) email
+      // instead of failing with OAuthAccountNotLinked. Single-user app; users.email is unique.
+      allowDangerousEmailAccountLinking: true,
+      authorization: { params: { redirect_uri: BROKER_REDIRECT_URI } },
+      // The code exchange must send the same redirect_uri as the authorize request.
+      [customFetch]: (input: RequestInfo | URL, init?: RequestInit) => {
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        if (url === GOOGLE_TOKEN_URL && init?.body instanceof URLSearchParams) {
+          init.body.set("redirect_uri", BROKER_REDIRECT_URI);
+        }
+        return fetch(input, init);
+      },
     }),
   ],
   callbacks: {
