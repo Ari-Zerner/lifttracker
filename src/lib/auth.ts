@@ -3,12 +3,13 @@ import Google from "next-auth/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/db";
 import { accounts, sessions, users, verificationTokens } from "@/db/schema";
-import { BROKER_REDIRECT_URI } from "@/lib/broker";
+import { BROKER_REDIRECT_URI, prefixGoogleState } from "@/lib/broker";
+import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const nextAuth = NextAuth({
   trustHost: true,
   adapter: DrizzleAdapter(db, {
     usersTable: users,
@@ -60,3 +61,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
+
+export const { handlers, auth, signOut } = nextAuth;
+
+// Server-side sign-in (server actions) must also carry the broker's state prefix: Auth.js's own
+// signIn() redirects straight to Google, bypassing the route handler that adds it.
+export async function signIn(provider: "google", options: { redirectTo?: string } = {}) {
+  const url = await nextAuth.signIn(provider, { ...options, redirect: false });
+  redirect(prefixGoogleState(url));
+}
